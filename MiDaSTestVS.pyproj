@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>4cbf1ee7-1e76-4612-a33a-7934f62c6067</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>MiDaSTestVS.py</StartupFile>
+    <StartupFile>..\..\..\Documents\MyApps\MiDaS SimpleGUI\MiDaS Simple GUI.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
