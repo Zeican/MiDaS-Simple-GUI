@@ -25,6 +25,7 @@ default_model = "MiDaS Hybrid"
 def load_depth_model(model_name):
     try:
         model = torch.hub.load("intel-isl/MiDaS", models[model_name]).eval()
+        print("Model found in cache.")
         return model.to(device)
     except Exception as e:
         print(f"Error loading the model: {e}")
