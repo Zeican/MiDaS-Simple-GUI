@@ -10,20 +10,19 @@ from PIL import ImageTk
 # Check if GPU is available
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Load the MiDaS models
+# Load the depth estimation models
 models = {
     "MiDaS Small": "MiDaS_small",
-    "MiDaS Large": "MiDaS_large",
-    "MiDaS XL": "MiDaS_xlarge",
-    "MiDaS Hybrid": "MiDaS_hybrid",
+    "MiDaS Large": "DPT_Large",
+    "MiDaS Hybrid": "DPT_Hybrid",
 }
 
 # Default downscaled size and model
 default_downscaled_size = (512, 512)
-default_model = "MiDaS Small"
+default_model = "MiDaS Hybrid"
 
-# Load the selected MiDaS model
-def load_midas_model(model_name):
+# Load the selected depth estimation model
+def load_depth_model(model_name):
     model = torch.hub.load("intel-isl/MiDaS", models[model_name]).eval()
     return model.to(device)
 
@@ -39,17 +38,28 @@ def upscale_depth_map(depth_map, target_size):
 
 # Estimate depth from the input image
 def estimate_depth(original_image, downscaled_size, selected_model):
-    # Load the selected MiDaS model
-    model = load_midas_model(selected_model)
+    # Load the selected depth estimation model
+    model = load_depth_model(selected_model)
 
     # Convert the image to RGB color space
     rgb_image = original_image.convert("RGB")
 
-    # Downscale the original image
-    downscaled_image = downscale_image(rgb_image, downscaled_size)
+    # Calculate the aspect ratio of the original image
+    aspect_ratio = original_image.width / original_image.height
 
-    # Preprocess the downscaled image
-    input_image = transforms.ToTensor()(downscaled_image).unsqueeze(0).to(device)
+    # Log: Estimating depth
+    print("Estimating depth...")
+
+    # Squash the image to a square
+    squared_image = rgb_image.resize((downscaled_size[0], int(downscaled_size[0] / aspect_ratio)))
+
+    # Downscale the image if the selected model is "MiDaS Small" or "MiDaS Hybrid"
+    if selected_model in ["MiDaS Small", "MiDaS Hybrid"]:
+        # Preprocess the squared image
+        input_image = transforms.ToTensor()(squared_image).unsqueeze(0).to(device)
+    else:
+        # Preprocess the original image
+        input_image = transforms.ToTensor()(rgb_image).unsqueeze(0).to(device)
 
     # Perform depth estimation
     with torch.no_grad():
@@ -58,15 +68,20 @@ def estimate_depth(original_image, downscaled_size, selected_model):
     # Transfer the depth prediction to CPU and convert to numpy array
     depth_map = depth_prediction.squeeze().cpu().numpy()
 
+    # Determine the target size for upscaling
+    target_size = (original_image.width, original_image.height)
+
     # Upscale the depth map to the original image size
-    target_size = original_image.size[::-1]  # Reverse width and height
     upscaled_depth_map = upscale_depth_map(depth_map, target_size)
 
     # Normalize the depth values (0-1)
-    upscaled_depth_map = (upscaled_depth_map - upscaled_depth_map.min()) / (upscaled_depth_map.max() - upscaled_depth_map.min())
+    upscaled_depth_map = (upscaled_depth_map - upscaled_depth_map.min()) / (
+            upscaled_depth_map.max() - upscaled_depth_map.min())
 
     # Convert the depth map to an image
     upscaled_depth_map_image = Image.fromarray((upscaled_depth_map * 255).astype(np.uint8))
+
+    # Log: Depth estimation complete
 
     return upscaled_depth_map_image
 
@@ -74,7 +89,7 @@ def estimate_depth(original_image, downscaled_size, selected_model):
 # GUI layout
 layout = [
     [sg.Image(key="-IMAGE-", size=(400, 400))],
-    [sg.Button("Select Image"), sg.Text("Downscaled Size"), sg.Input(default_downscaled_size[0], size=(4, 1), key="-WIDTH-"), sg.Text("x"), sg.Input(default_downscaled_size[1], size=(4, 1), key="-HEIGHT-"), sg.Text("Model Selection"), sg.Combo(list(models.keys()), default_value=default_model, key="-MODEL-")],
+    [sg.Button("Select Image"), sg.Text("Model Selection"), sg.Combo(list(models.keys()), size=(12, 1), default_value=default_model, key="-MODEL-")],
     [sg.Button("Estimate Depth"), sg.Button("Export Depth Map"), sg.Button("Exit")]
 ]
 
@@ -111,16 +126,28 @@ while True:
     if event == "Estimate Depth":
         if original_image:
             try:
-                downscaled_width = int(values["-WIDTH-"])
-                downscaled_height = int(values["-HEIGHT-"])
                 selected_model = values["-MODEL-"]
-                downscaled_size = (downscaled_width, downscaled_height)
 
+                downscaled_size = default_downscaled_size
+                # Calculate the aspect ratio of the original image
+                aspect_ratio = original_image.width / original_image.height
+
+                # Log: Starting depth estimation
+                print("Starting depth estimation")
+                print(f"Selected model: {selected_model}")
+                print(f"Aspect ratio: {aspect_ratio}")
+                print(f"Downscaled size: {downscaled_size}")
+
+                # Estimate depth
                 depth_map_image = estimate_depth(original_image, downscaled_size, selected_model)
+
                 # Resize the depth map image to fit the maximum size
                 resized_image = depth_map_image.copy()
                 resized_image.thumbnail((max_width, max_height))
                 window["-IMAGE-"].update(data=ImageTk.PhotoImage(resized_image))
+
+                # Log: Depth estimation complete
+                print("Depth estimation complete")
             except:
                 sg.popup_error("Failed to estimate depth.")
 
