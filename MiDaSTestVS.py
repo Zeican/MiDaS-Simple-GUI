@@ -60,13 +60,8 @@ def estimate_depth(original_image, downscaled_size, selected_model):
     # Squash the image to a square
     squared_image = rgb_image.resize((downscaled_size[0], int(downscaled_size[0] / aspect_ratio)))
 
-    # Downscale the image if the selected model is "MiDaS Small" or "MiDaS Hybrid"
-    if selected_model in ["MiDaS Small", "MiDaS Hybrid"]:
-        # Preprocess the squared image
-        input_image = transforms.ToTensor()(squared_image).unsqueeze(0).to(device)
-    else:
-        # Preprocess the original image
-        input_image = transforms.ToTensor()(rgb_image).unsqueeze(0).to(device)
+    # Downscale the image 
+    input_image = transforms.ToTensor()(squared_image).unsqueeze(0).to(device)
 
     # Perform depth estimation
     with torch.no_grad():
