@@ -23,8 +23,14 @@ default_model = "MiDaS Hybrid"
 
 # Load the selected depth estimation model
 def load_depth_model(model_name):
-    model = torch.hub.load("intel-isl/MiDaS", models[model_name]).eval()
-    return model.to(device)
+    try:
+        model = torch.hub.load("intel-isl/MiDaS", models[model_name]).eval()
+        return model.to(device)
+    except Exception as e:
+        print(f"Error loading the model: {e}")
+        print("Downloading the model. This may take a moment...")
+        model = torch.hub.load("intel-isl/MiDaS", models[model_name], force_reload=True).eval()
+        return model.to(device)
 
 # Downscale the image
 def downscale_image(image, size):
