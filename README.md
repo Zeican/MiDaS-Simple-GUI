@@ -8,4 +8,5 @@ Torch,
 TorchVision,
 numpy,
 cv2,
-PySimpleGUI
+PySimpleGUI,
+Tinn
