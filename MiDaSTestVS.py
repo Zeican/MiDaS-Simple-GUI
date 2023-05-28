@@ -27,11 +27,21 @@ def load_depth_model(model_name):
         model = torch.hub.load("intel-isl/MiDaS", models[model_name]).eval()
         print("Model found in cache.")
         return model.to(device)
+    except ImportError:
+        print("Error: Missing required package 'torch' or 'torchvision'. Please install them.")
+        sys.exit(1)
+    except KeyError:
+        print("Error: Invalid model name. Please select a valid model.")
+        sys.exit(1)
     except Exception as e:
         print(f"Error loading the model: {e}")
         print("Downloading the model. This may take a moment...")
-        model = torch.hub.load("intel-isl/MiDaS", models[model_name], force_reload=True).eval()
-        return model.to(device)
+        try:
+            model = torch.hub.load("intel-isl/MiDaS", models[model_name], force_reload=True).eval()
+            return model.to(device)
+        except Exception as e:
+            print(f"Error downloading the model: {e}")
+            sys.exit(1)
 
 # Downscale the image
 def downscale_image(image, size):
@@ -60,7 +70,7 @@ def estimate_depth(original_image, downscaled_size, selected_model):
     # Squash the image to a square
     squared_image = rgb_image.resize((downscaled_size[0], int(downscaled_size[0] / aspect_ratio)))
 
-    # Downscale the image 
+    # Downscale the image
     input_image = transforms.ToTensor()(squared_image).unsqueeze(0).to(device)
 
     # Perform depth estimation
@@ -84,6 +94,7 @@ def estimate_depth(original_image, downscaled_size, selected_model):
     upscaled_depth_map_image = Image.fromarray((upscaled_depth_map * 255).astype(np.uint8))
 
     # Log: Depth estimation complete
+    print("Depth estimation complete")
 
     return upscaled_depth_map_image
 
@@ -150,7 +161,8 @@ while True:
 
                 # Log: Depth estimation complete
                 print("Depth estimation complete")
-            except:
+            except Exception as e:
+                print(f"Error: {e}")
                 sg.popup_error("Failed to estimate depth.")
 
     # Handle the "Export Depth Map" button
