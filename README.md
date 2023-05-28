@@ -9,4 +9,4 @@ TorchVision,
 numpy,
 cv2,
 PySimpleGUI,
-Tinn
+Timm
