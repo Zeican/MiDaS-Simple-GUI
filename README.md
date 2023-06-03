@@ -9,4 +9,5 @@ TorchVision,
 numpy,
 cv2,
 PySimpleGUI,
-Timm
+Timm,
+Pillow,
