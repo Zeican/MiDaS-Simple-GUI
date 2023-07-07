@@ -7,7 +7,7 @@ A simple GUI for the MiDaS Depth Estimation Library
 ------- INSTRUCTIONS --------
 Clone or download the repository from GitHub.
 
-Open a terminal or command prompt and navigate to the downloaded repository.
+Open a terminal or command prompt and navigate to the downloaded repository. (Default C:/Users/(username)/MiDaS-Simple-Gui)
 
 Install the package using pip:
 
