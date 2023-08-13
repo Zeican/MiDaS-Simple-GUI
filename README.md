@@ -5,6 +5,15 @@ A simple GUI for the MiDaS Depth Estimation Library
 
 
 ------- INSTRUCTIONS --------
+
+-- Automatically --
+Run the 'install.bat' file
+Follow the instructions provided there.
+
+If you want to launch it after without running the installer again, just run the 'launch.bat' file.
+
+
+-- Manually using Wheel file --
 Clone or download the repository from GitHub.
 
 Open a terminal or command prompt and navigate to the downloaded repository. (Default C:/Users/(username)/MiDaS-Simple-Gui)
